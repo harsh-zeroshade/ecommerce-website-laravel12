@@ -3,133 +3,240 @@
 @section('title', 'Edit Product')
 
 @section('content')
-<div class="admin-page-header">
-    <div>
-        <span class="eyebrow">Inventory</span>
-        <h1>Edit Product</h1>
-    </div>
-</div>
 
-<div class="admin-card">
-    <div class="admin-card-body padded">
-        <form method="POST" action="{{ route('admin.products.update', $product) }}" enctype="multipart/form-data" class="admin-form">
-            @csrf
-            @method('PUT')
+    @include('admin.partials.form-page-header', [
+        'eyebrow' => 'Inventory',
+        'title'   => 'Edit Product',
+        'desc'    => 'Update the details for ' . $product->name,
+        'icon'    => 'bi-pencil-square',
+        'backUrl' => route('admin.products.index'),
+        'backLabel' => 'Back to products',
+    ])
 
-            <div class="admin-field">
-                <label for="name">Product Name</label>
-                <input type="text" id="name" name="name" value="{{ old('name', $product->name) }}" required>
-                @error('name')<div class="error-text">{{ $message }}</div>@enderror
-            </div>
+    <form
+        method="POST"
+        action="{{ route('admin.products.update', $product) }}"
+        enctype="multipart/form-data"
+        class="admin-form-modern"
+        data-product-form
+    >
+        @csrf
+        @method('PUT')
 
-            <div class="admin-field">
-                <label for="category_id">Category</label>
-                <select id="category_id" name="category_id" required>
-                    <option value="">Select Category</option>
-                    @foreach($categories as $category)
-                        <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <div class="admin-form-modern-grid">
 
-            <div class="admin-field">
-                <label for="short_description">Short Description</label>
-                <input type="text" id="short_description" name="short_description" value="{{ old('short_description', $product->short_description) }}">
-            </div>
+            <div class="admin-form-modern-main">
 
-            <div class="admin-field">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" rows="5">{{ old('description', $product->description) }}</textarea>
-            </div>
+                <x-admin-form-section title="Basic Information" icon="bi-info-circle" desc="The name and category shown to customers.">
+                    @include('admin.partials.text-field', [
+                        'name'        => 'name',
+                        'label'       => 'Product Name',
+                        'value'       => old('name', $product->name),
+                        'placeholder' => 'e.g. Heritage Linen Overshirt',
+                        'required'    => true,
+                        'icon'        => 'bi-tag',
+                    ])
 
-            <div class="admin-form-grid">
-                <div class="admin-field">
-                    <label for="price">Price (₹)</label>
-                    <input type="number" step="0.01" id="price" name="price" value="{{ old('price', $product->price) }}" required>
-                </div>
-                <div class="admin-field">
-                    <label for="discount_percentage">Discount %</label>
-                    <input type="number" step="0.01" id="discount_percentage" name="discount_percentage" value="{{ old('discount_percentage', $product->discount_percentage) }}">
-                </div>
-            </div>
+                    @include('admin.partials.select-field', [
+                        'name'        => 'category_id',
+                        'label'       => 'Category',
+                        'options'     => $categories->pluck('name', 'id'),
+                        'value'       => old('category_id', $product->category_id),
+                        'placeholder' => 'Select a category…',
+                        'required'    => true,
+                        'icon'        => 'bi-grid-3x3-gap',
+                    ])
+                </x-admin-form-section>
 
-            <div class="admin-form-grid">
-                <div class="admin-field">
-                    <label for="stock">Stock Quantity</label>
-                    <input type="number" id="stock" name="stock" value="{{ old('stock', $product->stock) }}" required>
-                </div>
-                <div class="admin-field">
-                    <label for="sku">SKU</label>
-                    <input type="text" id="sku" name="sku" value="{{ old('sku', $product->sku) }}" required>
-                </div>
-            </div>
+                <x-admin-form-section title="Descriptions" icon="bi-text-paragraph" desc="Tell the story behind the product.">
+                    @include('admin.partials.text-field', [
+                        'name'        => 'short_description',
+                        'label'       => 'Short Description',
+                        'value'       => old('short_description', $product->short_description),
+                        'placeholder' => 'A one-liner that appears on product cards',
+                        'icon'        => 'bi-card-text',
+                        'hint'        => 'Up to 160 characters. Shown on product tiles and search results.',
+                    ])
 
-            <div class="admin-form-grid">
-                <div class="admin-field">
-                    <label for="brand">Brand</label>
-                    <input type="text" id="brand" name="brand" value="{{ old('brand', $product->brand) }}">
-                </div>
-                <div class="admin-field">
-                    <label for="image">Primary Product Image</label>
-                    <input type="file" id="image" name="image" accept="image/*">
+                    @include('admin.partials.textarea-field', [
+                        'name'        => 'description',
+                        'label'       => 'Full Description',
+                        'value'       => old('description', $product->description),
+                        'rows'        => 7,
+                        'placeholder' => 'Describe the fabric, fit, story, and any care instructions…',
+                        'icon'        => 'bi-journal-text',
+                        'counter'     => 2000,
+                    ])
+                </x-admin-form-section>
 
-                    @if($product->image)
-                        <small style="color:var(--admin-muted); display:block; margin-top:0.5rem;">Current primary image</small>
-                        <div style="margin-top:0.75rem;">
-                            <img
-                                src="{{ asset('storage/' . $product->image) }}"
-                                alt="Current primary image"
-                                style="width:120px; height:90px; object-fit:cover; border-radius:10px;"
-                            >
-                        </div>
-                    @endif
-                </div>
-            </div>
+                <x-admin-form-section title="Pricing & Stock" icon="bi-currency-rupee" desc="How much it costs and how much you have on hand.">
+                    <div class="admin-form-row">
+                        @include('admin.partials.text-field', [
+                            'name'        => 'price',
+                            'type'        => 'number',
+                            'label'       => 'Price',
+                            'value'       => old('price', $product->price),
+                            'prefix'      => '₹',
+                            'placeholder' => '0.00',
+                            'required'    => true,
+                            'icon'        => 'bi-cash',
+                            'step'        => '0.01',
+                            'min'         => '0',
+                        ])
 
-            <div class="admin-form-grid">
-                <div class="admin-field" style="grid-column: 1 / -1;">
-                    <label for="images">Additional Product Images (Gallery)</label>
-                    <input type="file" id="images" name="images[]" accept="image/*" multiple>
+                        @include('admin.partials.text-field', [
+                            'name'        => 'discount_percentage',
+                            'type'        => 'number',
+                            'label'       => 'Discount',
+                            'value'       => old('discount_percentage', $product->discount_percentage),
+                            'suffix'      => '%',
+                            'placeholder' => '0',
+                            'icon'        => 'bi-percent',
+                            'step'        => '0.01',
+                            'min'         => '0',
+                            'max'         => '100',
+                            'hint'        => 'Optional. Sale price = price × (1 − discount/100).',
+                        ])
+                    </div>
+
+                    <div class="admin-form-row">
+                        @include('admin.partials.text-field', [
+                            'name'        => 'stock',
+                            'type'        => 'number',
+                            'label'       => 'Stock Quantity',
+                            'value'       => old('stock', $product->stock),
+                            'placeholder' => '0',
+                            'required'    => true,
+                            'icon'        => 'bi-box-seam',
+                            'min'         => '0',
+                        ])
+
+                        @include('admin.partials.text-field', [
+                            'name'        => 'sku',
+                            'label'       => 'SKU',
+                            'value'       => old('sku', $product->sku),
+                            'placeholder' => 'e.g. ADG-LIN-001',
+                            'required'    => true,
+                            'icon'        => 'bi-upc-scan',
+                            'hint'        => 'Unique stock-keeping unit for inventory tracking.',
+                        ])
+                    </div>
+
+                    <div class="admin-form-row">
+                        @include('admin.partials.text-field', [
+                            'name'        => 'brand',
+                            'label'       => 'Brand',
+                            'value'       => old('brand', $product->brand),
+                            'placeholder' => 'e.g. Adgon',
+                            'icon'        => 'bi-bookmark-star',
+                        ])
+                    </div>
+                </x-admin-form-section>
+
+                <x-admin-form-section title="Imagery" icon="bi-image" desc="Replace the primary image or add to the gallery.">
+                    @include('admin.partials.file-field', [
+                        'name'    => 'image',
+                        'label'   => 'Replace Primary Image',
+                        'icon'    => 'bi-cloud-arrow-up',
+                        'preview' => $product->image ?? null,
+                        'hint'    => 'Leave empty to keep the current image. Recommended 1200×1500px.',
+                    ])
 
                     @php
                         $galleryImages = is_array($product->images) ? $product->images : (is_string($product->images) ? json_decode($product->images, true) : []);
-                        $galleryImages = is_array($galleryImages) ? $galleryImages : [];
+                        $galleryImages = is_array($galleryImages) ? array_values(array_filter($galleryImages)) : [];
                     @endphp
+                    @include('admin.partials.file-field', [
+                        'name'     => 'images',
+                        'label'    => 'Add to Gallery',
+                        'icon'     => 'bi-images',
+                        'multiple' => true,
+                        'hint'     => 'Uploading here will add to the existing gallery. Delete individual images from the product page.',
+                    ])
 
-                    @if(!empty($galleryImages))
-                        <div style="margin-top:1rem;">
-                            <div style="color:var(--admin-muted); margin-bottom:0.5rem;">Current gallery</div>
-                            <div style="display:flex; flex-wrap:wrap; gap:0.75rem;">
+                    @if(! empty($galleryImages))
+                        <div class="admin-gallery-current">
+                            <div class="admin-gallery-current-label">
+                                <i class="bi bi-images"></i>
+                                <span>Current gallery ({{ count($galleryImages) }})</span>
+                            </div>
+                            <div class="admin-gallery-current-grid">
                                 @foreach($galleryImages as $img)
-                                    <div>
-                                        <img
-                                            src="{{ asset('storage/' . $img) }}"
-                                            alt="Gallery image"
-                                            style="width:110px; height:80px; object-fit:cover; border-radius:10px;"
-                                        >
+                                    <div class="admin-gallery-current-item">
+                                        <img src="{{ asset('storage/' . $img) }}" alt="Gallery image">
                                     </div>
                                 @endforeach
                             </div>
                         </div>
                     @endif
+                </x-admin-form-section>
+
+                <div class="admin-form-card-footer">
+                    <a href="{{ route('admin.products.index') }}" class="admin-btn admin-btn-outline">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </a>
+                    <button type="submit" class="admin-btn admin-btn-primary admin-btn--lg">
+                        <i class="bi bi-check2-circle"></i>
+                        <span>Save Changes</span>
+                    </button>
                 </div>
             </div>
 
-            <label class="admin-checkbox">
-                <input type="checkbox" name="is_featured" value="1" {{ old('is_featured', $product->is_featured) ? 'checked' : '' }}>
-                Featured Product
-            </label>
+            <aside class="admin-form-modern-side">
 
-            <label class="admin-checkbox">
-                <input type="checkbox" name="is_active" value="1" {{ old('is_active', $product->is_active) ? 'checked' : '' }}>
-                Active
-            </label>
+                <x-admin-form-section title="Visibility" icon="bi-eye" desc="Control how this product appears on the storefront.">
+                    <div class="admin-toggles-stack">
+                        @include('admin.partials.toggle-field', [
+                            'name'    => 'is_featured',
+                            'label'   => 'Featured Product',
+                            'icon'    => 'bi-star-fill',
+                            'hint'    => 'Highlights this on the homepage and category tops.',
+                            'checked' => old('is_featured', $product->is_featured),
+                        ])
 
-            <div class="admin-form-actions">
-                <button type="submit" class="admin-btn admin-btn-primary">Update Product</button>
-                <a href="{{ route('admin.products.index') }}" class="admin-btn admin-btn-outline">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
+                        @include('admin.partials.toggle-field', [
+                            'name'    => 'is_active',
+                            'label'   => 'Active',
+                            'icon'    => 'bi-check2-circle',
+                            'hint'    => 'Inactive products are hidden from the storefront.',
+                            'checked' => old('is_active', $product->is_active),
+                        ])
+                    </div>
+                </x-admin-form-section>
+
+                <div class="admin-form-side-card">
+                    <div class="admin-form-side-card-head">
+                        <i class="bi bi-clock-history"></i>
+                        <span>History</span>
+                    </div>
+                    <ul class="admin-history">
+                        <li>
+                            <span>Created</span>
+                            <strong>{{ $product->created_at->format('d M Y, H:i') }}</strong>
+                        </li>
+                        <li>
+                            <span>Last updated</span>
+                            <strong>{{ $product->updated_at->diffForHumans() }}</strong>
+                        </li>
+                        <li>
+                            <span>Reviews</span>
+                            <strong>{{ $product->reviews()->count() }} {{ \Illuminate\Support\Str::plural('review', $product->reviews()->count()) }}</strong>
+                        </li>
+                        <li>
+                            <span>Avg. rating</span>
+                            <strong>
+                                @php
+                                    $rc = $product->reviews()->count();
+                                    $avg = $rc > 0 ? round($product->reviews()->avg('rating'), 1) : '—';
+                                @endphp
+                                {{ $avg }}{{ $rc > 0 ? ' / 5' : '' }}
+                            </strong>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+
+        </div>
+    </form>
+
 @endsection

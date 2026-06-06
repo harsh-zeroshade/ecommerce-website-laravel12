@@ -3,64 +3,103 @@
 @section('title', 'Add Category')
 
 @section('content')
-<div class="admin-page-header">
-    <div>
-        <span class="eyebrow">Catalog Management</span>
-        <h1>Add New Category</h1>
-        <p style="margin-top:0.5rem; color:var(--text-muted); font-size:0.95rem;">
-            Create a new product category for your store.
-        </p>
-    </div>
-    <a href="{{ route('admin.categories.index') }}" class="admin-btn admin-btn-outline">
-        <i class="bi bi-arrow-left" style="margin-right:0.35rem;"></i> Back
-    </a>
-</div>
 
-<div class="admin-card">
-    <div class="admin-card-header" style="padding:1.5rem; background:linear-gradient(135deg, var(--cream) 0%, var(--bg-warm) 100%); border-bottom:1px solid var(--border);">
-        <h3 style="font-size:1rem; font-weight:600; color:var(--text);">Category Details</h3>
-    </div>
-    <div class="admin-card-body">
-        <form method="POST" action="{{ route('admin.categories.store') }}" style="padding:0 1.5rem;">
-            @csrf
+    @include('admin.partials.form-page-header', [
+        'eyebrow' => 'Catalog',
+        'title'   => 'Add Category',
+        'desc'    => 'Create a new category to organize your products.',
+        'icon'    => 'bi-layers',
+        'backUrl' => route('admin.categories.index'),
+        'backLabel' => 'Back to categories',
+    ])
 
-            <div class="admin-field">
-                <label for="name">Category Name <span style="color:#d97706;">*</span></label>
-                <input type="text" id="name" name="name" value="{{ old('name') }}" required>
-                <small style="color:var(--text-muted);">Use clear, descriptive names (e.g., "Men's Clothing")</small>
-                @error('name')<span style="color:#d97706; font-size:0.85rem;">{{ $message }}</span>@enderror
+    <form
+        method="POST"
+        action="{{ route('admin.categories.store') }}"
+        enctype="multipart/form-data"
+        class="admin-form-modern"
+        data-category-form
+    >
+        @csrf
+
+        <div class="admin-form-modern-grid">
+
+            <div class="admin-form-modern-main">
+
+                <x-admin-form-section title="Category Details" icon="bi-layers" desc="The name and slug customers will see in URLs.">
+                    @include('admin.partials.text-field', [
+                        'name'        => 'name',
+                        'label'       => 'Category Name',
+                        'placeholder' => 'e.g. Outerwear',
+                        'required'    => true,
+                        'icon'        => 'bi-tag',
+                    ])
+
+                    @include('admin.partials.text-field', [
+                        'name'        => 'slug',
+                        'label'       => 'URL Slug',
+                        'placeholder' => 'auto-generated-from-name',
+                        'icon'        => 'bi-link-45deg',
+                        'hint'        => 'Auto-generated from the name if left blank. Use lowercase letters, numbers and hyphens.',
+                    ])
+
+                    @include('admin.partials.textarea-field', [
+                        'name'        => 'description',
+                        'label'       => 'Description',
+                        'rows'        => 4,
+                        'placeholder' => 'A short description shown on the category page…',
+                        'icon'        => 'bi-text-paragraph',
+                    ])
+                </x-admin-form-section>
+
+                <x-admin-form-section title="Category Image" icon="bi-image" desc='Shown on the homepage "Shop by category" section.'>
+                    @include('admin.partials.file-field', [
+                        'name'  => 'image',
+                        'label' => 'Cover Image',
+                        'icon'  => 'bi-cloud-arrow-up',
+                        'hint'  => 'Recommended 600×800px. JPG, PNG or WebP.',
+                    ])
+                </x-admin-form-section>
+
+                <div class="admin-form-card-footer">
+                    <a href="{{ route('admin.categories.index') }}" class="admin-btn admin-btn-outline">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </a>
+                    <button type="submit" class="admin-btn admin-btn-primary admin-btn--lg">
+                        <i class="bi bi-check2-circle"></i>
+                        <span>Create Category</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="admin-field">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" rows="4">{{ old('description') }}</textarea>
-                <small style="color:var(--text-muted);">Add details about what products belong in this category</small>
-                @error('description')<span style="color:#d97706; font-size:0.85rem;">{{ $message }}</span>@enderror
-            </div>
+            <aside class="admin-form-modern-side">
 
-            <div class="admin-field">
-                <label for="slug">URL Slug</label>
-                <input type="text" id="slug" name="slug" value="{{ old('slug') }}">
-                <small style="color:var(--text-muted);">Auto-generated if empty. Used for URLs (e.g., /shop/mens-clothing)</small>
-                @error('slug')<span style="color:#d97706; font-size:0.85rem;">{{ $message }}</span>@enderror
-            </div>
+                <x-admin-form-section title="Visibility" icon="bi-eye" desc="Inactive categories are hidden from navigation.">
+                    <div class="admin-toggles-stack">
+                        @include('admin.partials.toggle-field', [
+                            'name'    => 'is_active',
+                            'label'   => 'Active',
+                            'icon'    => 'bi-check2-circle',
+                            'hint'    => 'Customers can browse and filter by this category.',
+                            'checked' => old('is_active', true),
+                        ])
+                    </div>
+                </x-admin-form-section>
 
-            <hr style="border:none; border-top:1px solid var(--border); margin:1.75rem 0;">
+                <div class="admin-form-side-card">
+                    <div class="admin-form-side-card-head">
+                        <i class="bi bi-lightbulb"></i>
+                        <span>Tips</span>
+                    </div>
+                    <ul class="admin-tips">
+                        <li><i class="bi bi-check2"></i> Keep names short and shoppable</li>
+                        <li><i class="bi bi-check2"></i> Use a clear hero image (600×800)</li>
+                        <li><i class="bi bi-check2"></i> Slug changes may break existing links</li>
+                    </ul>
+                </div>
+            </aside>
 
-            <div class="admin-field">
-                <label>
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active') ? 'checked' : 'checked' }}>
-                    <span>Active (Available for customers)</span>
-                </label>
-            </div>
+        </div>
+    </form>
 
-            <div class="admin-form-actions" style="margin-top:2rem; padding-bottom:1.5rem;">
-                <button type="submit" class="admin-btn admin-btn-primary">
-                    <i class="bi bi-plus-lg" style="margin-right:0.5rem;"></i>Create Category
-                </button>
-                <a href="{{ route('admin.categories.index') }}" class="admin-btn admin-btn-outline">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
 @endsection

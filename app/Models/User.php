@@ -56,6 +56,17 @@ class User extends Authenticatable
         return $this->hasMany(Order::class);
     }
 
+    public function wishlist()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function wishlistedProducts()
+    {
+        return $this->belongsToMany(Product::class, 'wishlists')
+            ->withTimestamps();
+    }
+
     public function isAdmin()
     {
         return $this->role === 'admin';
@@ -64,5 +75,21 @@ class User extends Authenticatable
     public function isCustomer()
     {
         return $this->role === 'customer';
+    }
+
+    public function initials(): string
+    {
+        $parts = preg_split('/\s+/', trim($this->name));
+
+        if (count($parts) >= 2) {
+            return strtoupper(substr($parts[0], 0, 1) . substr(end($parts), 0, 1));
+        }
+
+        return strtoupper(substr($this->name, 0, 1));
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar ? asset('storage/' . $this->avatar) : null;
     }
 }

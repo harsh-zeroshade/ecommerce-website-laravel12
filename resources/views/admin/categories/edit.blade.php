@@ -3,69 +3,126 @@
 @section('title', 'Edit Category')
 
 @section('content')
-<div class="admin-page-header">
-    <div>
-        <span class="eyebrow">Catalog Management</span>
-        <h1>Edit Category</h1>
-        <p style="margin-top:0.5rem; color:var(--text-muted); font-size:0.95rem;">
-            Update category details and settings.
-        </p>
-    </div>
-    <a href="{{ route('admin.categories.index') }}" class="admin-btn admin-btn-outline">
-        <i class="bi bi-arrow-left" style="margin-right:0.35rem;"></i> Back
-    </a>
-</div>
 
-<div class="admin-card">
-    <div class="admin-card-header" style="padding:1.5rem; background:linear-gradient(135deg, var(--cream) 0%, var(--bg-warm) 100%); border-bottom:1px solid var(--border);">
-        <h3 style="font-size:1rem; font-weight:600; color:var(--text);">Category Details</h3>
-    </div>
-    <div class="admin-card-body">
-        <form method="POST" action="{{ route('admin.categories.update', $category) }}" style="padding:0 1.5rem;">
-            @csrf
-            @method('PUT')
+    @include('admin.partials.form-page-header', [
+        'eyebrow' => 'Catalog',
+        'title'   => 'Edit Category',
+        'desc'    => 'Update the details for ' . $category->name,
+        'icon'    => 'bi-pencil-square',
+        'backUrl' => route('admin.categories.index'),
+        'backLabel' => 'Back to categories',
+    ])
 
-            <div class="admin-form-grid">
-                <div class="admin-field">
-                    <label for="name">Category Name <span style="color:#d97706;">*</span></label>
-                    <input type="text" id="name" name="name" value="{{ old('name', $category->name) }}" required>
-                    @error('name')<span style="color:#d97706; font-size:0.85rem;">{{ $message }}</span>@enderror
+    <form
+        method="POST"
+        action="{{ route('admin.categories.update', $category) }}"
+        enctype="multipart/form-data"
+        class="admin-form-modern"
+        data-category-form
+    >
+        @csrf
+        @method('PUT')
+
+        <div class="admin-form-modern-grid">
+
+            <div class="admin-form-modern-main">
+
+                <x-admin-form-section title="Category Details" icon="bi-layers" desc="The name and slug customers will see in URLs.">
+                    @include('admin.partials.text-field', [
+                        'name'        => 'name',
+                        'label'       => 'Category Name',
+                        'value'       => old('name', $category->name),
+                        'placeholder' => 'e.g. Outerwear',
+                        'required'    => true,
+                        'icon'        => 'bi-tag',
+                    ])
+
+                    @include('admin.partials.text-field', [
+                        'name'        => 'slug',
+                        'label'       => 'URL Slug',
+                        'value'       => old('slug', $category->slug),
+                        'placeholder' => 'auto-generated-from-name',
+                        'icon'        => 'bi-link-45deg',
+                        'hint'        => 'Auto-generated from the name if left blank.',
+                    ])
+
+                    @include('admin.partials.textarea-field', [
+                        'name'        => 'description',
+                        'label'       => 'Description',
+                        'value'       => old('description', $category->description),
+                        'rows'        => 4,
+                        'placeholder' => 'A short description shown on the category page…',
+                        'icon'        => 'bi-text-paragraph',
+                    ])
+                </x-admin-form-section>
+
+                <x-admin-form-section title="Category Image" icon="bi-image" desc="Replace the cover image used on the homepage.">
+                    @if($category->image)
+                        <div class="admin-current-image">
+                            <div class="admin-current-image-label">
+                                <i class="bi bi-image"></i>
+                                <span>Current cover</span>
+                            </div>
+                            <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}">
+                        </div>
+                    @endif
+
+                    @include('admin.partials.file-field', [
+                        'name'    => 'image',
+                        'label'   => $category->image ? 'Replace Cover Image' : 'Cover Image',
+                        'icon'    => 'bi-cloud-arrow-up',
+                        'hint'    => 'Recommended 600×800px. Leave empty to keep the current image.',
+                    ])
+                </x-admin-form-section>
+
+                <div class="admin-form-card-footer">
+                    <a href="{{ route('admin.categories.index') }}" class="admin-btn admin-btn-outline">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </a>
+                    <button type="submit" class="admin-btn admin-btn-primary admin-btn--lg">
+                        <i class="bi bi-check2-circle"></i>
+                        <span>Save Changes</span>
+                    </button>
                 </div>
+            </div>
 
-                <div class="admin-field">
-                    <label>Products</label>
-                    <input type="text" value="{{ $category->products()->count() }} products" disabled style="background:var(--bg-warm); cursor:not-allowed;">
+            <aside class="admin-form-modern-side">
+
+                <x-admin-form-section title="Visibility" icon="bi-eye" desc="Inactive categories are hidden from navigation.">
+                    <div class="admin-toggles-stack">
+                        @include('admin.partials.toggle-field', [
+                            'name'    => 'is_active',
+                            'label'   => 'Active',
+                            'icon'    => 'bi-check2-circle',
+                            'hint'    => 'Customers can browse and filter by this category.',
+                            'checked' => old('is_active', $category->is_active),
+                        ])
+                    </div>
+                </x-admin-form-section>
+
+                <div class="admin-form-side-card">
+                    <div class="admin-form-side-card-head">
+                        <i class="bi bi-bar-chart"></i>
+                        <span>Insights</span>
+                    </div>
+                    <ul class="admin-history">
+                        <li>
+                            <span>Products in this category</span>
+                            <strong>{{ $category->products()->count() }}</strong>
+                        </li>
+                        <li>
+                            <span>Created</span>
+                            <strong>{{ $category->created_at->format('d M Y') }}</strong>
+                        </li>
+                        <li>
+                            <span>Last updated</span>
+                            <strong>{{ $category->updated_at->diffForHumans() }}</strong>
+                        </li>
+                    </ul>
                 </div>
-            </div>
+            </aside>
 
-            <div class="admin-field">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" rows="4">{{ old('description', $category->description) }}</textarea>
-                @error('description')<span style="color:#d97706; font-size:0.85rem;">{{ $message }}</span>@enderror
-            </div>
+        </div>
+    </form>
 
-            <div class="admin-field">
-                <label for="slug">URL Slug</label>
-                <input type="text" id="slug" name="slug" value="{{ old('slug', $category->slug) }}">
-                @error('slug')<span style="color:#d97706; font-size:0.85rem;">{{ $message }}</span>@enderror
-            </div>
-
-            <hr style="border:none; border-top:1px solid var(--border); margin:1.75rem 0;">
-
-            <div class="admin-field">
-                <label>
-                    <input type="checkbox" name="is_active" value="1" {{ old('is_active', $category->is_active) ? 'checked' : '' }}>
-                    <span>Active (Available for customers)</span>
-                </label>
-            </div>
-
-            <div class="admin-form-actions" style="margin-top:2rem; padding-bottom:1.5rem;">
-                <button type="submit" class="admin-btn admin-btn-primary">
-                    <i class="bi bi-check-lg" style="margin-right:0.5rem;"></i>Save Changes
-                </button>
-                <a href="{{ route('admin.categories.index') }}" class="admin-btn admin-btn-outline">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
 @endsection

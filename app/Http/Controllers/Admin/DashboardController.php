@@ -26,9 +26,16 @@ class DashboardController extends Controller
             ->get();
 
         $topProducts = Product::withCount('reviews')
+            ->withAvg('reviews as rating_avg', 'rating')
             ->orderBy('reviews_count', 'desc')
             ->take(5)
-            ->get();
+            ->get()
+            ->each(function ($product) {
+                // Make `$product->rating` reflect the live average of reviews
+                // (the `rating` column is only refreshed by ReviewController::store),
+                // so the dashboard always shows up-to-date stars.
+                $product->rating = (float) ($product->rating_avg ?? 0);
+            });
 
         $orderStatusStats = Order::select('order_status', DB::raw('count(*) as count'))
             ->groupBy('order_status')

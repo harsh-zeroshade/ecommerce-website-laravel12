@@ -40,28 +40,41 @@
 </section>
 
 <!-- The Collection -->
-<section class="section" id="collection">
+<section class="section product-slider-section" id="collection">
     <div class="container">
         <div class="section-label reveal">
             <span class="eyebrow">The Collection</span>
             <h2 class="display-md">Curated for the modern wardrobe</h2>
         </div>
-        <div class="collection-grid">
-            @forelse($featuredProducts as $product)
-                @include('partials.product-tile', ['product' => $product])
-            @empty
-                @for($i = 0; $i < 4; $i++)
-                <div class="product-tile reveal">
-                    <div class="product-tile-image">
-                        <div class="product-tile-placeholder"><i class="bi bi-bag"></i></div>
-                    </div>
-                    <div class="product-tile-info">
-                        <h3>Coming Soon</h3>
-                        <div class="price">—</div>
-                    </div>
+        <div class="product-slider">
+            <div class="swiper">
+                <div class="swiper-wrapper">
+                    @forelse($featuredProducts as $product)
+                        <div class="swiper-slide">
+                            @include('partials.product-tile', ['product' => $product])
+                        </div>
+                    @empty
+                        @for($i = 0; $i < 4; $i++)
+                        <div class="swiper-slide">
+                            <div class="product-tile reveal">
+                                <div class="product-tile-image">
+                                    <div class="product-tile-placeholder"><i class="bi bi-bag"></i></div>
+                                </div>
+                                <div class="product-tile-info">
+                                    <h3>Coming Soon</h3>
+                                    <div class="price">—</div>
+                                </div>
+                            </div>
+                        </div>
+                        @endfor
+                    @endforelse
                 </div>
-                @endfor
-            @endforelse
+                <div class="swiper-pagination"></div>
+            </div>
+            <div class="swiper-nav">
+                <button class="swiper-button-prev" aria-label="Previous"><i class="bi bi-chevron-left"></i></button>
+                <button class="swiper-button-next" aria-label="Next"><i class="bi bi-chevron-right"></i></button>
+            </div>
         </div>
         @if($featuredProducts->count() > 0)
         <div style="text-align:center; margin-top:3rem;" class="reveal">
@@ -169,54 +182,94 @@
 </section>
 
 <!-- Categories -->
-<section class="section">
+<section class="section category-section">
     <div class="container">
         <div class="section-label reveal">
             <span class="eyebrow">Categories</span>
             <h2 class="display-md">Shop by category</h2>
         </div>
-        <div class="categories-strip reveal">
-            <a href="{{ route('shop.index') }}" class="category-chip {{ !request('category') ? 'active' : '' }}">
-                <i class="bi bi-grid"></i> All
-            </a>
+        <div class="category-grid">
             @foreach($categories as $category)
-                <a href="{{ route('shop.index', ['category' => $category->id]) }}" class="category-chip">
-                    <i class="bi bi-tag"></i> {{ $category->name }}
-                </a>
+            <a href="{{ route('shop.index', ['category' => $category->id]) }}" class="category-card reveal reveal-delay-{{ ($loop->index % 4) + 1 }}">
+                <div class="category-card-image">
+                    @if($category->image)
+                        <img src="{{ asset('storage/' . $category->image) }}" alt="{{ $category->name }}" loading="lazy">
+                    @else
+                        <div class="category-card-placeholder">
+                            <i class="bi bi-layers"></i>
+                        </div>
+                    @endif
+                    <div class="category-card-overlay"></div>
+                </div>
+                <div class="category-card-body">
+                    <h3>{{ $category->name }}</h3>
+                    @if($category->description)
+                        <p>{{ Str::limit($category->description, 60) }}</p>
+                    @endif
+                    <span class="category-card-link">Explore <i class="bi bi-arrow-right"></i></span>
+                </div>
+            </a>
             @endforeach
+        </div>
+        <div class="text-center reveal" style="margin-top:2.5rem;">
+            <a href="{{ route('shop.index') }}" class="btn btn-ghost">View All Categories</a>
         </div>
     </div>
 </section>
 
 <!-- New Arrivals -->
-<section class="section" style="background:var(--cream);">
+<section class="section product-slider-section" style="background:var(--cream);">
     <div class="container">
         <div class="section-label reveal">
             <span class="eyebrow">Just Dropped</span>
             <h2 class="display-md">New arrivals</h2>
         </div>
-        <div class="collection-grid">
-            @forelse($newArrivals as $product)
-                @include('partials.product-tile', ['product' => $product])
-            @empty
-                <p class="text-muted" style="grid-column:1/-1; text-align:center;">No new arrivals yet.</p>
-            @endforelse
+        <div class="product-slider">
+            <div class="swiper">
+                <div class="swiper-wrapper">
+                    @forelse($newArrivals as $product)
+                        <div class="swiper-slide">
+                            @include('partials.product-tile', ['product' => $product])
+                        </div>
+                    @empty
+                        <div class="swiper-slide">
+                            <p class="text-muted" style="text-align:center;">No new arrivals yet.</p>
+                        </div>
+                    @endforelse
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+            <div class="swiper-nav">
+                <button class="swiper-button-prev" aria-label="Previous"><i class="bi bi-chevron-left"></i></button>
+                <button class="swiper-button-next" aria-label="Next"><i class="bi bi-chevron-right"></i></button>
+            </div>
         </div>
     </div>
 </section>
 
 <!-- Top Rated -->
 @if($topRatedProducts->count() > 0)
-<section class="section">
+<section class="section product-slider-section">
     <div class="container">
         <div class="section-label reveal">
             <span class="eyebrow">Customer Favorites</span>
             <h2 class="display-md">Top rated</h2>
         </div>
-        <div class="collection-grid">
-            @foreach($topRatedProducts as $product)
-                @include('partials.product-tile', ['product' => $product])
-            @endforeach
+        <div class="product-slider">
+            <div class="swiper">
+                <div class="swiper-wrapper">
+                    @foreach($topRatedProducts as $product)
+                        <div class="swiper-slide">
+                            @include('partials.product-tile', ['product' => $product])
+                        </div>
+                    @endforeach
+                </div>
+                <div class="swiper-pagination"></div>
+            </div>
+            <div class="swiper-nav">
+                <button class="swiper-button-prev" aria-label="Previous"><i class="bi bi-chevron-left"></i></button>
+                <button class="swiper-button-next" aria-label="Next"><i class="bi bi-chevron-right"></i></button>
+            </div>
         </div>
     </div>
 </section>

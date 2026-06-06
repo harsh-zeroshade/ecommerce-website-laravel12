@@ -50,6 +50,17 @@ class Product extends Model
         return $this->hasMany(Review::class);
     }
 
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function wishlistedBy()
+    {
+        return $this->belongsToMany(User::class, 'wishlists')
+            ->withTimestamps();
+    }
+
     public function getDiscountedPriceAttribute()
     {
         return $this->price - ($this->price * $this->discount_percentage / 100);

@@ -57,9 +57,25 @@ class ReviewController extends Controller
             'photo_paths' => $storedPhotos ?: [],
         ]);
 
+        // Keep the product's cached `rating` and `reviews_count` columns in sync
+        // so the admin dashboard (and any other view that reads them) stays correct.
+        $this->refreshProductRating($product->id);
+
         return redirect()
             ->route('product.show', $product->id)
             ->with('success', 'Thanks! Your review has been submitted.');
+    }
+
+    protected function refreshProductRating(int $productId): void
+    {
+        $stats = Review::where('product_id', $productId)
+            ->selectRaw('COUNT(*) as cnt, AVG(rating) as avg_rating')
+            ->first();
+
+        Product::where('id', $productId)->update([
+            'reviews_count' => (int) ($stats->cnt ?? 0),
+            'rating' => round((float) ($stats->avg_rating ?? 0), 2),
+        ]);
     }
 
     protected function isVerifiedPurchase(int $userId, int $productId): bool

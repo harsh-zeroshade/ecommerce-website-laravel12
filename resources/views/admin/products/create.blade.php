@@ -3,161 +3,183 @@
 @section('title', 'Create Product')
 
 @section('content')
-<div class="admin-page-header">
-    <div>
-        <span class="eyebrow">Inventory</span>
-        <h1>Create Product</h1>
-    </div>
-</div>
 
-<div class="admin-card">
-    <div class="admin-card-body padded">
-        <form method="POST" action="{{ route('admin.products.store') }}" enctype="multipart/form-data" class="admin-form">
-            @csrf
+    @include('admin.partials.form-page-header', [
+        'eyebrow' => 'Inventory',
+        'title'   => 'Create Product',
+        'desc'    => 'Add a new piece to your catalog. Fill in the essentials, then layer in pricing, stock, and imagery.',
+        'icon'    => 'bi-plus-square',
+        'backUrl' => route('admin.products.index'),
+        'backLabel' => 'Back to products',
+    ])
 
-            <div class="admin-field">
-                <label for="name">Product Name</label>
-                <input type="text" id="name" name="name" value="{{ old('name') }}" required>
-                @error('name')<div class="error-text">{{ $message }}</div>@enderror
-            </div>
+    <form
+        method="POST"
+        action="{{ route('admin.products.store') }}"
+        enctype="multipart/form-data"
+        class="admin-form-modern"
+        data-product-form
+    >
+        @csrf
 
-            <div class="admin-field">
-                <label for="category_id">Category</label>
-                <select id="category_id" name="category_id" required>
-                    <option value="">Select Category</option>
-                    @foreach($categories as $category)
-                        <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>{{ $category->name }}</option>
-                    @endforeach
-                </select>
-                @error('category_id')<div class="error-text">{{ $message }}</div>@enderror
-            </div>
+        <div class="admin-form-modern-grid">
 
-            <div class="admin-field">
-                <label for="short_description">Short Description</label>
-                <input type="text" id="short_description" name="short_description" value="{{ old('short_description') }}">
-            </div>
+            <div class="admin-form-modern-main">
 
-            <div class="admin-field">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" rows="5">{{ old('description') }}</textarea>
-            </div>
+                <x-admin-form-section title="Basic Information" icon="bi-info-circle" desc="The name and category shown to customers.">
+                    @include('admin.partials.text-field', [
+                        'name'        => 'name',
+                        'label'       => 'Product Name',
+                        'placeholder' => 'e.g. Heritage Linen Overshirt',
+                        'required'    => true,
+                        'icon'        => 'bi-tag',
+                    ])
 
-            <div class="admin-form-grid">
-                <div class="admin-field">
-                    <label for="price">Price (₹)</label>
-                    <input type="number" step="0.01" id="price" name="price" value="{{ old('price') }}" required>
-                    @error('price')<div class="error-text">{{ $message }}</div>@enderror
-                </div>
-                <div class="admin-field">
-                    <label for="discount_percentage">Discount %</label>
-                    <input type="number" step="0.01" id="discount_percentage" name="discount_percentage" value="{{ old('discount_percentage', 0) }}">
-                </div>
-            </div>
+                    @include('admin.partials.select-field', [
+                        'name'        => 'category_id',
+                        'label'       => 'Category',
+                        'options'     => $categories->pluck('name', 'id'),
+                        'placeholder' => 'Select a category…',
+                        'required'    => true,
+                        'icon'        => 'bi-grid-3x3-gap',
+                    ])
+                </x-admin-form-section>
 
-            <div class="admin-form-grid">
-                <div class="admin-field">
-                    <label for="stock">Stock Quantity</label>
-                    <input type="number" id="stock" name="stock" value="{{ old('stock', 0) }}" required>
-                </div>
-                <div class="admin-field">
-                    <label for="sku">SKU</label>
-                    <input type="text" id="sku" name="sku" value="{{ old('sku') }}" required>
-                </div>
-            </div>
+                <x-admin-form-section title="Descriptions" icon="bi-text-paragraph" desc="Tell the story behind the product.">
+                    @include('admin.partials.text-field', [
+                        'name'        => 'short_description',
+                        'label'       => 'Short Description',
+                        'placeholder' => 'A one-liner that appears on product cards',
+                        'icon'        => 'bi-card-text',
+                        'hint'        => 'Up to 160 characters. Shown on product tiles and search results.',
+                    ])
 
-            <div class="admin-form-grid">
-                <div class="admin-field">
-                    <label for="brand">Brand</label>
-                    <input type="text" id="brand" name="brand" value="{{ old('brand') }}">
-                </div>
+                    @include('admin.partials.textarea-field', [
+                        'name'        => 'description',
+                        'label'       => 'Full Description',
+                        'rows'        => 7,
+                        'placeholder' => 'Describe the fabric, fit, story, and any care instructions…',
+                        'icon'        => 'bi-journal-text',
+                        'counter'     => 2000,
+                    ])
+                </x-admin-form-section>
 
-                <div class="admin-field">
-                    <label for="image">Primary Product Image</label>
-                    <input type="file" id="image" name="image" accept="image/*">
+                <x-admin-form-section title="Pricing & Stock" icon="bi-currency-rupee" desc="How much it costs and how much you have on hand.">
+                    <div class="admin-form-row">
+                        @include('admin.partials.text-field', [
+                            'name'        => 'price',
+                            'type'        => 'number',
+                            'label'       => 'Price',
+                            'prefix'      => '₹',
+                            'placeholder' => '0.00',
+                            'required'    => true,
+                            'icon'        => 'bi-cash',
+                            'step'        => '0.01',
+                            'min'         => '0',
+                        ])
 
-                    <div id="primaryImagePreview" style="margin-top:0.75rem; display:none;">
-                        <div style="color:var(--admin-muted); margin-bottom:0.5rem;">Preview</div>
-                        <img id="primaryImagePreviewImg" src="" alt="Primary image preview"
-                             style="width:120px; height:90px; object-fit:cover; border-radius:10px;">
+                        @include('admin.partials.text-field', [
+                            'name'        => 'discount_percentage',
+                            'type'        => 'number',
+                            'label'       => 'Discount',
+                            'suffix'      => '%',
+                            'placeholder' => '0',
+                            'icon'        => 'bi-percent',
+                            'step'        => '0.01',
+                            'min'         => '0',
+                            'max'         => '100',
+                            'hint'        => 'Optional. Sale price = price × (1 − discount/100).',
+                        ])
                     </div>
-                </div>
-            </div>
 
-            <div class="admin-form-grid">
-                <div class="admin-field" style="grid-column: 1 / -1;">
-                    <label for="images">Additional Product Images</label>
-                    <input type="file" id="images" name="images[]" accept="image/*" multiple>
+                    <div class="admin-form-row">
+                        @include('admin.partials.text-field', [
+                            'name'        => 'stock',
+                            'type'        => 'number',
+                            'label'       => 'Stock Quantity',
+                            'placeholder' => '0',
+                            'required'    => true,
+                            'icon'        => 'bi-box-seam',
+                            'min'         => '0',
+                        ])
 
-                    <small style="color:var(--admin-muted); display:block; margin-top:0.5rem;">Upload multiple images for the product gallery.</small>
-
-                    <div id="additionalImagesPreview" style="margin-top:1rem; display:none;">
-                        <div style="color:var(--admin-muted); margin-bottom:0.5rem;">Preview</div>
-                        <div id="additionalImagesPreviewGrid" style="display:flex; flex-wrap:wrap; gap:0.75rem;"></div>
+                        @include('admin.partials.text-field', [
+                            'name'        => 'sku',
+                            'label'       => 'SKU',
+                            'placeholder' => 'e.g. ADG-LIN-001',
+                            'required'    => true,
+                            'icon'        => 'bi-upc-scan',
+                            'hint'        => 'Unique stock-keeping unit for inventory tracking.',
+                        ])
                     </div>
+
+                    <div class="admin-form-row">
+                        @include('admin.partials.text-field', [
+                            'name'        => 'brand',
+                            'label'       => 'Brand',
+                            'placeholder' => 'e.g. Adgon',
+                            'icon'        => 'bi-bookmark-star',
+                        ])
+                    </div>
+                </x-admin-form-section>
+
+                <x-admin-form-section title="Imagery" icon="bi-image" desc="Drop in a primary image and any extra gallery shots.">
+                    @include('admin.partials.file-field', [
+                        'name'   => 'image',
+                        'label'  => 'Primary Product Image',
+                        'icon'   => 'bi-cloud-arrow-up',
+                        'hint'   => 'Recommended 1200×1500px (4:5). JPG, PNG or WebP. Max 5MB.',
+                    ])
+
+                    @include('admin.partials.file-field', [
+                        'name'     => 'images',
+                        'label'    => 'Gallery Images',
+                        'icon'     => 'bi-images',
+                        'multiple' => true,
+                        'hint'     => 'Upload multiple images for the product gallery. Drag to reorder on the storefront.',
+                    ])
+                </x-admin-form-section>
+
+                <div class="admin-form-card-footer">
+                    <a href="{{ route('admin.products.index') }}" class="admin-btn admin-btn-outline">
+                        <i class="bi bi-x-lg"></i> Cancel
+                    </a>
+                    <button type="submit" class="admin-btn admin-btn-primary admin-btn--lg">
+                        <i class="bi bi-check2-circle"></i>
+                        <span>Create Product</span>
+                    </button>
                 </div>
             </div>
 
-            <label class="admin-checkbox">
-                <input type="checkbox" name="is_featured" value="1" {{ old('is_featured') ? 'checked' : '' }}>
-                Featured Product
-            </label>
+            <aside class="admin-form-modern-side">
 
-            <div class="admin-form-actions">
-                <button type="submit" class="admin-btn admin-btn-primary">Create Product</button>
-                <a href="{{ route('admin.products.index') }}" class="admin-btn admin-btn-outline">Cancel</a>
-            </div>
-        </form>
-    </div>
-</div>
+                <x-admin-form-section title="Visibility" icon="bi-eye" desc="Control how this product appears on the storefront.">
+                    <div class="admin-toggles-stack">
+                        @include('admin.partials.toggle-field', [
+                            'name'    => 'is_featured',
+                            'label'   => 'Featured Product',
+                            'icon'    => 'bi-star-fill',
+                            'hint'    => 'Highlights this on the homepage and category tops.',
+                            'checked' => old('is_featured', false),
+                        ])
+                    </div>
+                </x-admin-form-section>
 
-<script>
-    (function () {
-        const primaryInput = document.getElementById('image');
-        const primaryPreview = document.getElementById('primaryImagePreview');
-        const primaryPreviewImg = document.getElementById('primaryImagePreviewImg');
+                <div class="admin-form-side-card">
+                    <div class="admin-form-side-card-head">
+                        <i class="bi bi-lightbulb"></i>
+                        <span>Tips for great listings</span>
+                    </div>
+                    <ul class="admin-tips">
+                        <li><i class="bi bi-check2"></i> Use a clear, descriptive product name</li>
+                        <li><i class="bi bi-check2"></i> Add 3–5 high-quality gallery images</li>
+                        <li><i class="bi bi-check2"></i> Keep the short description under 160 chars</li>
+                        <li><i class="bi bi-check2"></i> Set stock to <code>0</code> to hide without deleting</li>
+                    </ul>
+                </div>
+            </aside>
 
-        if (primaryInput && primaryPreview && primaryPreviewImg) {
-            primaryInput.addEventListener('change', function () {
-                const file = primaryInput.files && primaryInput.files[0];
-                if (!file) {
-                    primaryPreview.style.display = 'none';
-                    primaryPreviewImg.src = '';
-                    return;
-                }
-                primaryPreviewImg.src = URL.createObjectURL(file);
-                primaryPreview.style.display = 'block';
-            });
-        }
-
-        const galleryInput = document.getElementById('images');
-        const additionalPreview = document.getElementById('additionalImagesPreview');
-        const additionalGrid = document.getElementById('additionalImagesPreviewGrid');
-
-        if (galleryInput && additionalPreview && additionalGrid) {
-            galleryInput.addEventListener('change', function () {
-                const files = galleryInput.files ? Array.from(galleryInput.files) : [];
-                additionalGrid.innerHTML = '';
-
-                if (files.length === 0) {
-                    additionalPreview.style.display = 'none';
-                    return;
-                }
-
-                files.forEach((file) => {
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(file);
-                    img.alt = 'Additional image preview';
-                    img.style.width = '110px';
-                    img.style.height = '80px';
-                    img.style.objectFit = 'cover';
-                    img.style.borderRadius = '10px';
-                    additionalGrid.appendChild(img);
-                });
-
-                additionalPreview.style.display = 'block';
-            });
-        }
-    })();
-</script>
+        </div>
+    </form>
 
 @endsection

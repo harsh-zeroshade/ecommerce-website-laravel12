@@ -1,6 +1,15 @@
 /* ADGON — Premium Clothing E-Commerce Interactions */
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Hide customer loading overlay
+    const loadingOverlay = document.getElementById('customerLoadingOverlay');
+    if (loadingOverlay) {
+        setTimeout(() => {
+            loadingOverlay.classList.add('hidden');
+            setTimeout(() => loadingOverlay.remove(), 400);
+        }, 300);
+    }
+    
     initTheme();
     initNav();
     initCart();
@@ -9,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initWardrobeSteps();
     initMarquee();
     initSmoothScroll();
+    initShopFilters();
+    initProductSliders();
 });
 
 /* ── Theme Toggle ── */
@@ -161,6 +172,151 @@ window.addToCartAnimate = function(btn) {
     }, 2000);
 };
 
+/* ── Toast Notifications ── */
+function ensureToastContainer() {
+    let c = document.getElementById('adgonToastContainer');
+    if (!c) {
+        c = document.createElement('div');
+        c.id = 'adgonToastContainer';
+        c.className = 'adgon-toast-container';
+        document.body.appendChild(c);
+    }
+    return c;
+}
+
+window.showToast = function(message, type = 'info', duration = 2400) {
+    const container = ensureToastContainer();
+    const toast = document.createElement('div');
+    toast.className = `adgon-toast adgon-toast--${type}`;
+
+    const iconMap = {
+        success: 'bi-check-circle-fill',
+        error: 'bi-exclamation-circle-fill',
+        info: 'bi-info-circle-fill',
+    };
+
+    toast.innerHTML = `<i class="bi ${iconMap[type] || iconMap.info}"></i><span>${message}</span>`;
+    container.appendChild(toast);
+
+    // Trigger enter animation
+    requestAnimationFrame(() => toast.classList.add('adgon-toast--show'));
+
+    setTimeout(() => {
+        toast.classList.remove('adgon-toast--show');
+        toast.classList.add('adgon-toast--hide');
+        setTimeout(() => toast.remove(), 350);
+    }, duration);
+};
+
+/* ── Wishlist Helpers ── */
+window.updateWishlistCount = function(count) {
+    document.querySelectorAll('.wishlist-count').forEach(el => {
+        el.textContent = count;
+        el.classList.toggle('wishlist-count--hidden', count === 0);
+    });
+    // Swap the heart icon between fill/outline in the topbar
+    document.querySelectorAll('.wishlist-link > i').forEach(icon => {
+        if (count > 0) {
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+        } else {
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
+        }
+    });
+};
+
+function setWishlistBtnState(btn, added) {
+    if (!btn) return;
+    btn.classList.toggle('is-wishlisted', added);
+    btn.setAttribute('title', added ? 'Remove from Wishlist' : 'Add to Wishlist');
+
+    // Update the heart icon (works for product-tile and product-detail)
+    const icon = btn.querySelector('i');
+    if (icon) {
+        if (added) {
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill');
+        } else {
+            icon.classList.remove('bi-heart-fill');
+            icon.classList.add('bi-heart');
+        }
+    }
+
+    // Update label text on the big detail-page button
+    const label = btn.querySelector('.wishlist-btn-label');
+    if (label) {
+        label.textContent = added ? 'In Wishlist' : 'Add to Wishlist';
+    }
+}
+
+function syncAllWishlistBtnsForProduct(productId, added) {
+    document.querySelectorAll(`[data-wishlist-btn][data-product-id="${productId}"]`).forEach(b => {
+        setWishlistBtnState(b, added);
+    });
+}
+
+/* ── Toggle Wishlist (heart button) ── */
+window.toggleWishlist = async function(productId, btn = null) {
+    if (!window.ADGON_ROUTES?.wishlistToggle) return;
+
+    // Optimistic UI — flip state immediately for snappy feedback
+    const wasAdded = btn?.classList.contains('is-wishlisted');
+    const optimisticAdded = !wasAdded;
+    if (btn) {
+        setWishlistBtnState(btn, optimisticAdded);
+        // Burst animation
+        btn.classList.add('wishlist-burst');
+        setTimeout(() => btn.classList.remove('wishlist-burst'), 600);
+    }
+
+    try {
+        const res = await fetch(window.ADGON_ROUTES.wishlistToggle, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ product_id: productId }),
+        });
+
+        // Not logged in → 401 with redirect URL
+        if (res.status === 401) {
+            const data = await res.json().catch(() => ({}));
+            showToast(data.message || 'Please log in to use your wishlist.', 'info', 3200);
+            // Revert optimistic state
+            if (btn) setWishlistBtnState(btn, !!wasAdded);
+            // Small delay so the toast is visible before redirect
+            setTimeout(() => {
+                const url = data.redirect || window.ADGON_ROUTES.loginUrl;
+                window.location.href = url + '?redirect=' + encodeURIComponent(window.location.pathname);
+            }, 600);
+            return;
+        }
+
+        const data = await res.json();
+        if (!res.ok) {
+            // Revert on error
+            if (btn) setWishlistBtnState(btn, !!wasAdded);
+            showToast(data.message || 'Could not update wishlist.', 'error');
+            return;
+        }
+
+        // Sync all matching buttons on the page to the canonical state
+        syncAllWishlistBtnsForProduct(productId, data.added);
+        updateWishlistCount(data.count);
+
+        showToast(data.message, data.added ? 'success' : 'info', 1800);
+    } catch (e) {
+        if (btn) setWishlistBtnState(btn, !!wasAdded);
+        showToast('Something went wrong. Please try again.', 'error');
+    }
+};
+
+/* ── Legacy alias kept for backwards compat with any older markup ── */
+window.addToWishlist = window.toggleWishlist;
+
 /* ── Cart Item Controls ── */
 function initCartItems() {
     document.querySelectorAll('.cart-item').forEach(item => {
@@ -278,6 +434,44 @@ function initMarquee() {
     track.innerHTML += clone;
 }
 
+/* ── Shop Filters ── */
+function initShopFilters() {
+    const sidebar = document.getElementById('shopSidebar');
+    const toggle = document.querySelector('.shop-filter-toggle');
+    const overlay = document.querySelector('.shop-filter-overlay');
+    const closeBtn = document.querySelector('.shop-sidebar-close');
+    const form = document.getElementById('filterForm');
+
+    if (!sidebar) return;
+
+    const open = () => {
+        sidebar.classList.add('open');
+        overlay?.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    };
+
+    const close = () => {
+        sidebar.classList.remove('open');
+        overlay?.classList.remove('open');
+        document.body.style.overflow = '';
+    };
+
+    toggle?.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    overlay?.addEventListener('click', close);
+
+    // Toggle active states on category & sort selection
+    form?.querySelectorAll('.filter-category-item input, .filter-sort-pill input').forEach(input => {
+        input.addEventListener('change', () => {
+            const group = input.closest('.filter-category-list, .filter-sort-options');
+            group?.querySelectorAll('.filter-category-item, .filter-sort-pill').forEach(el => {
+                el.classList.remove('active');
+            });
+            input.closest('.filter-category-item, .filter-sort-pill')?.classList.add('active');
+        });
+    });
+}
+
 /* ── Smooth Scroll ── */
 function initSmoothScroll() {
     document.querySelectorAll('a[href*="#"]').forEach(anchor => {
@@ -290,6 +484,36 @@ function initSmoothScroll() {
                 e.preventDefault();
                 target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
+        });
+    });
+}
+
+/* ── Product Sliders ── */
+function initProductSliders() {
+    document.querySelectorAll('.product-slider').forEach(el => {
+        const swiperEl = el.querySelector('.swiper');
+        if (!swiperEl) return;
+
+        new Swiper(swiperEl, {
+            slidesPerView: 1,
+            spaceBetween: 16,
+            navigation: {
+                prevEl: el.querySelector('.swiper-button-prev'),
+                nextEl: el.querySelector('.swiper-button-next'),
+            },
+            pagination: {
+                el: el.querySelector('.swiper-pagination'),
+                clickable: true,
+            },
+            autoplay: {
+                delay: 4000,
+                disableOnInteraction: true,
+            },
+            breakpoints: {
+                640: { slidesPerView: 2 },
+                768: { slidesPerView: 3 },
+                1024: { slidesPerView: 4 },
+            },
         });
     });
 }

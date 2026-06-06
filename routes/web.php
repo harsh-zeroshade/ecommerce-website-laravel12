@@ -5,6 +5,7 @@ use App\Http\Controllers\Customer\HomeController;
 use App\Http\Controllers\Customer\ShopController;
 use App\Http\Controllers\Customer\CartController;
 use App\Http\Controllers\Customer\CheckoutController;
+use App\Http\Controllers\Customer\WishlistController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\OrderController;
@@ -22,6 +23,12 @@ Route::get('/product/{product:id}', [ShopController::class, 'show'])->name('prod
 Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 Route::patch('/cart/update/{productId}', [CartController::class, 'update'])->name('cart.update');
 Route::delete('/cart/remove/{productId}', [CartController::class, 'remove'])->name('cart.remove');
+
+// Wishlist — page requires auth, toggle works for both guests (returns 401 JSON -> redirect to login) and auth users
+Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
+Route::post('/wishlist/toggle', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+Route::delete('/wishlist/{productId}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
+Route::get('/wishlist/count', [WishlistController::class, 'count'])->name('wishlist.count');
 
 use App\Http\Controllers\Customer\AccountProfileController;
 
@@ -94,6 +101,40 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/account/tracking', [\App\Http\Controllers\Customer\AccountOrderController::class, 'tracking'])
         ->name('account.tracking');
+});
+
+// Support Pages
+Route::prefix('support')->name('support.')->group(function () {
+    Route::get('/faq', function () {
+        return view('customer.support.faq');
+    })->name('faq');
+
+    Route::get('/shipping', function () {
+        return view('customer.support.shipping');
+    })->name('shipping');
+
+    Route::get('/returns', function () {
+        return view('customer.support.returns');
+    })->name('returns');
+
+    Route::get('/contact', function () {
+        return view('customer.support.contact');
+    })->name('contact');
+});
+
+// Legal Pages
+Route::prefix('legal')->name('legal.')->group(function () {
+    Route::get('/return-policy', function () {
+        return view('customer.legal.return-policy');
+    })->name('return-policy');
+
+    Route::get('/terms', function () {
+        return view('customer.legal.terms');
+    })->name('terms');
+
+    Route::get('/privacy-policy', function () {
+        return view('customer.legal.privacy-policy');
+    })->name('privacy-policy');
 });
 
 // Auth routes - Laravel Breeze or manual implementation
